@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import svgr from 'vite-plugin-svgr';
-import htmlEnv from 'vite-plugin-html-env';
 import { VitePWA as pwa } from 'vite-plugin-pwa';
-import { visualizer } from 'rollup-plugin-visualizer';
-
-const NODE_ENVS: any = process.env || {};
+import { analyzer } from 'vite-bundle-analyzer';
 
 /**
  * https://vitejs.dev/config/
@@ -23,9 +19,13 @@ export default defineConfig({
       },
     }),
     react(),
-    htmlEnv({ ...NODE_ENVS }),
-    visualizer() as any,
+    analyzer({
+      enabled: process.env.ENABLE_ANALYZER === '1',
+    }),
     pwa({
+      devOptions: {
+        enabled: true,
+      },
       manifest: {
         name: 'Skyline Overlay',
         short_name: 'Skyline',
@@ -51,11 +51,6 @@ export default defineConfig({
   ],
   css: {
     devSourcemap: true,
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@use './src/scss/variables' as var;`,
-      },
-    },
   },
   build: {
     sourcemap: true,

@@ -1,16 +1,14 @@
 import './DevPanel.scss';
 import { useCallback, useState } from 'react';
 import { getLS, setLS } from './utils/storage';
-import * as images from './assets/devbg';
 import { SInput, SSelect, SSwitch } from './components';
-import { cloneDeep } from './utils/lodash';
-import overlay from './utils/overlay';
+import { startMock, stopMock } from './utils/mocker';
 
 const bgImageMap = {
-  combat: { text: 'Combat', data: { url: images.combat } },
-  housing: { text: 'Housing', data: { url: images.housing } },
-  night: { text: 'Night', data: { url: images.night } },
-  treasure: { text: 'Treasure', data: { url: images.treasure } },
+  combat: { text: 'Combat', data: { url: '/devbg/combat.jpg' } },
+  housing: { text: 'Housing', data: { url: '/devbg/housing.jpg' } },
+  night: { text: 'Night', data: { url: '/devbg/night.jpg' } },
+  treasure: { text: 'Treasure', data: { url: '/devbg/treasure.jpg' } },
   none: { text: 'None', data: { url: '' } },
 };
 export type BGImageMapKey = keyof typeof bgImageMap & string;
@@ -48,9 +46,6 @@ interface DevPanelProps {
   children: React.ReactNode;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let mockData: any = null;
-
 function DevPanel({ children }: DevPanelProps) {
   const [showPanel, setShowPanel] = useState(
     () => getSettings().showPanel || false
@@ -69,42 +64,16 @@ function DevPanel({ children }: DevPanelProps) {
     backgroundColor: bgColor,
   };
 
-  const [mocking, setMocking] = useState<number>(NaN);
-  const handleMockingChange = useCallback(
-    async (value: boolean) => {
-      if (value) {
-        let data = cloneDeep(mockData);
-        if (!data) {
-          const res = await fetch(
-            'https://cdnjs.cloudflare.com/ajax/libs/ffxiv-overlay-api/4.4.0/fake_cn.json'
-          );
-          const json = await res.json();
-          data = cloneDeep(json);
-          mockData = cloneDeep(json);
-        }
-        let time = 1;
-        const int = window.setInterval(() => {
-          data.Encounter.duration = `00:${time < 10 ? '0' : ''}${time}`;
-          data.Encounter.encdps = 0;
-          Object.keys(data.Combatant).forEach((idx) => {
-            const dps = (Math.random() * 20000).toFixed(0);
-            data.Combatant[idx].encdps = dps;
-            data.Encounter.encdps += Number(dps);
-          });
-          data.Encounter.encdps = `${data.Encounter.encdps}`;
-          overlay.simulateData(data);
-          time++;
-        }, 1000);
-        setMocking(int);
-      } else {
-        if (!Number.isNaN(mocking)) {
-          window.clearInterval(mocking);
-          setMocking(NaN);
-        }
-      }
-    },
-    [mocking]
-  );
+  const [mocking, setMocking] = useState(false);
+  const handleMockingChange = useCallback(async (value: boolean) => {
+    if (value) {
+      startMock();
+      setMocking(true);
+    } else {
+      stopMock();
+      setMocking(false);
+    }
+  }, []);
 
   return (
     <div className='devp' style={style}>
@@ -126,10 +95,7 @@ function DevPanel({ children }: DevPanelProps) {
           <div className='devp-content'>
             <div className='devp-content-row'>
               <div className='devp-content-title'>Trigger Mock Data</div>
-              <SSwitch
-                value={!Number.isNaN(mocking)}
-                onChange={handleMockingChange}
-              />
+              <SSwitch value={mocking} onChange={handleMockingChange} />
             </div>
             <div className='devp-content-row'>
               <div className='devp-content-title'>Background Image</div>

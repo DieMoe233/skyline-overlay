@@ -1,6 +1,14 @@
 {
-  "installCommand": "pnpm install",
-  "devCommand": "pnpm run dev",
-  "buildCommand": "pnpm run build",
-  "outputDirectory": "./dist"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31556952, immutable"
+        }
+      ]
+    }
+  ]
 }
